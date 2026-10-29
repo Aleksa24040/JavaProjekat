@@ -1,84 +1,67 @@
 
-public class Player {
-	private String ime;
-	private int x;
-	private int y;
-	private int width;
-	private int height;
-	private int health;
-	
-	
-	public Player(String ime, int x, int y, int width, int height, int health) {
-		this.ime = ime;
-		this.x = x;
-		this.y = y;
-		this.width = width;
-		this.height = height;
-		this.health = health;
-	}
-	
-	public String getIme() {
-		return ime;
-	}
+public class Player extends GameObject{
 
-	public int getX() {
-		return x;
-	}
+		private String name;
+		private int health;
 
-	public int getY() {
-		return y;
-	}
-	
-	public int getWidth() {
-		return width;
-	}
-
-	public int getHeight() {
-		return height;
-	}
-	public int getHealth() {
-		return health;
-	}
-
-	public void setIme(String ime) {
-		String bezRazmaka = ime.trim();
-		
-		if (bezRazmaka.length() == 0) {
-            System.out.println("Ime igraca ne smije biti prazno.");
-            
+		public Player(String name, int x, int y, int width, int height, int health) {
+			super(x, y, width, height);
+			this.name = "Nepoznat igrac";
+			setName(name);
+			setHealth(health);
 		}
-		
-	}
 
-	public void setX(int x) {
-		this.x = x;
-	}
+		private String srediIme(String ime) {
+			String s = ime.trim();
+			String rezultat = "";
+			boolean pocetakRijeci = true;
 
-	public void setY(int y) {
-		this.y = y;
-	}
+			for (int i = 0; i < s.length(); i++) {
+				char c = s.charAt(i);
 
-	public void setWidth(int width) {
-		this.width = width;
-	}
+				if (c == ' ') {
+					pocetakRijeci = true;
+				} else {
+					if (pocetakRijeci) {
+						if (rezultat.length() > 0) {
+							rezultat = rezultat + " ";
+						}
+						rezultat = rezultat + ("" + c).toUpperCase();
+					} else {
+						rezultat = rezultat + ("" + c).toLowerCase();
+					}
+					pocetakRijeci = false;
+				}
+			}
+			return rezultat;
+		}
 
-	public void setHeight(int height) {
-		this.height = height;
-	}
-	public void setHealth(int health) {
-		if (health < 0 && health > 100) {
-			this.health = health;
-		}else {
-			System.out.println("Health mora biti izmedju 0 i 100");
+		public String getName() {
+			return name;
+		}
+		public void setName(String name) {
+			String sredjenoIme = srediIme(name);
+			if (!sredjenoIme.equals("")) {
+				this.name = sredjenoIme;
+			} else {
+				System.out.println("Ime igraca ne smije biti prazno.");
+			}
+		}
+
+		public int getHealth() {
+			return health;
+		}
+		public void setHealth(int health) {
+			if (health >= 0 && health <= 100) {
+				this.health = health;
+			} else {
+				System.out.println("Zdravlje mora biti izmedju 0 i 100.");
+			}
+		}
+
+		@Override
+		public String toString() {
+			return "Player[" + name + "] " + opisPolozaja() + " HP=" + health;
 		}
 	}
 
-	public String toString() {
-        return "Player[" + ime + "] @ (" + x + "," + y + ") " + width + "x" + height + " HP=" + health;
-    }
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
-	}
-
-}

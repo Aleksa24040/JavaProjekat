@@ -1,164 +1,146 @@
+import java.util.ArrayList;
 
 public class Game {
-	private Player player ;
-	private Enemy[] neprijatelja;
-	private int brojNeprijatelja;
-	private String eventLog;
-	
-	public Game(Player playerP) {
-		player = playerP;
-		neprijatelja = new Enemy[10];
-		brojNeprijatelja = 0;
-		eventLog = "";
+	private Player player;
+	private ArrayList<Enemy> enemies;
+	private ArrayList<String> eventLog;
+
+	public Game(Player player) {
+		this.player = player;
+		this.enemies = new ArrayList<>();
+		this.eventLog = new ArrayList<>();
 	}
-	
-	public Player getPlayer() {
+
+	public Player getIgraca() {
 		return player;
 	}
 
-	public void setPlayer(Player player) {
-		this.player = player;
+	public ArrayList<Enemy> getNeprijatelje() {
+		return enemies;
 	}
 
-	public boolean checkCollision(Player p, Enemy e) {
-		boolean preklapanjeX = p.getX() < e.getX() + e.getWidth() && e.getX() < p.getX() + p.getWidth();
-        boolean preklapanjeY = p.getY() < e.getY() + e.getHeight() && e.getY() < p.getY() + p.getHeight();
-        return preklapanjeX && preklapanjeY;
+	public ArrayList<String> getDnevnik() {
+		return eventLog;
 	}
-	
+
+	private void dodajDogadjaj(String poruka) {
+		eventLog.add(poruka);
+	}
+
+	public static boolean checkCollision(Player p, Enemy e) {
+		return p.intersects(e);
+	}
+
 	public void decreaseHealth(Player p, Enemy e) {
-		 int stariHP = p.getHealth();
-	        int noviHP = stariHP - e.getDamage();
-	        if (noviHP < 0)
-	            noviHP = 0;
-	        p.setHealth(noviHP);
-	        
-	        String poruka = "HIT: " + p.getIme() + " by " + e.getType() + " for " + e.getDamage()
-            + " -> HP " + stariHP + "->" + noviHP;
-	        eventLog = eventLog + poruka + "\n";
+		int staroZdravlje = p.getHealth();
+		int steta = e.izracunajStetu();
+		int novoZdravlje = staroZdravlje - steta;
+
+		if (novoZdravlje < 0) {
+			novoZdravlje = 0;
+		}
+
+		p.setHealth(novoZdravlje);
+
+		dodajDogadjaj("UDARAC: " + p.getName() + ", neprijatelj " + e.getType() + ", steta " + steta
+				+ " -> HP " + staroZdravlje + " -> " + novoZdravlje);
 	}
+
 	public void addEnemy(Enemy e) {
-        if (brojNeprijatelja < neprijatelja.length) {
-            neprijatelja[brojNeprijatelja] = e;
-            brojNeprijatelja++;
-            eventLog = eventLog + "ADD: " + e.toString() + "\n";
-        } else {
-            System.out.println("Greska: niz neprijatelja je pun.");
-        }
-    }
+		if (e != null) {
+			enemies.add(e);
 
-   
-    public Enemy[] findByType(String query) {
-        String trazeno = query.trim().toLowerCase();
+			dodajDogadjaj("DODAT: " + e.getType() + " na poziciji (" + e.getX() + "," + e.getY() + ")");
+		} else {
+			System.out.println("Neprijatelj nije dodat jer ne postoji.");
+		}
+	}
 
-     
-        int brojPronadjenih = 0;
-        for (int i = 0; i < brojNeprijatelja; i++) {
-            if (neprijatelja[i].getType().toLowerCase().contains(trazeno))
-                brojPronadjenih++;
-        }
+	public ArrayList<Enemy> findByType(String query) {
+		ArrayList<Enemy> rezultat = new ArrayList<>();
+		String trazeno = query.trim().toLowerCase();
 
+		for (int i = 0; i < enemies.size(); i++) {
+			String tip = enemies.get(i).getType().toLowerCase();
+			if (tip.contains(trazeno)) {
+				rezultat.add(enemies.get(i));
+			}
+		}
+		return rezultat;
+	}
 
-        Enemy[] pronadjeni = new Enemy[brojPronadjenih];
-        int j = 0;
-        for (int i = 0; i < brojNeprijatelja; i++) {
-            if (neprijatelja[i].getType().toLowerCase().contains(trazeno)) {
-                pronadjeni[j] = neprijatelja[i];
-                j++;
-            }
-        }
-        return pronadjeni;
-    }
+	public ArrayList<Enemy> collidingWithPlayer() {
+		ArrayList<Enemy> rezultat = new ArrayList<>();
 
+		for (int i = 0; i < enemies.size(); i++) {
+			if (checkCollision(player, enemies.get(i))) {
+				rezultat.add(enemies.get(i));
+			}
+		}
+		return rezultat;
+	}
 
-    public Enemy[] collidingWithPlayer() {
-        // 1) prebrojimo
-        int brojSudara = 0;
-        for (int i = 0; i < brojNeprijatelja; i++) {
-            if (checkCollision(player, neprijatelja[i]))
-                brojSudara++;
-        }
+	public void resolveCollisions() {
+		ArrayList<Enemy> sudari = collidingWithPlayer();
 
-       
-        Enemy[] sudaraju = new Enemy[brojSudara];
-        int j = 0;
-        for (int i = 0; i < brojNeprijatelja; i++) {
-            if (checkCollision(player, neprijatelja[i])) {
-                sudaraju[j] = neprijatelja[i];
-                j++;
-            }
-        }
-        return sudaraju;
-    }
+		dodajDogadjaj("PROVJERA: broj sudara sa igracem " + player.getName() + ": " + sudari.size());
+
+		for (Enemy e : sudari) {
+			decreaseHealth(player, e);
+		}
+	}
 
 
-    public void resolveCollisions() {
-        Enemy[] sudaraju = collidingWithPlayer();
-        for (int i = 0; i < sudaraju.length; i++) {
-            decreaseHealth(player, sudaraju[i]);
-        }
-    }
+
+	public static void ispisiNeprijatelje(ArrayList<Enemy> lista) {
+		if (lista.size() == 0) {
+			System.out.println("  (nema neprijatelja)");
+		}
+		for (Enemy e : lista) {
+			System.out.println("  " + e);
+		}
+	}
+
+	public static void main(String[] args) {
+
+		Player igrac = new Player("  peTar petrovic ", 9, 7, 34, 34, 85);
+		Game igra = new Game(igrac);
+
+		System.out.println("Igrac: " + igrac);
+		System.out.println();
+
+		Enemy ork = new MeeleEnemy("   Orc ", 100, 100, 40, 40, 65, 50);
+		igra.addEnemy(ork);
 
 
-    public void ispisiNeprijatelje() {
-        System.out.println("Neprijatelji (" + brojNeprijatelja + "):");
-        for (int i = 0; i < brojNeprijatelja; i++) {
-            System.out.println("  " + neprijatelja[i].toString());
-        }
-    }
+		Enemy kostur = new MeeleEnemy("Skeleton", 30, 20, 15, 15, 25, 60);
+		igra.addEnemy(kostur);
 
- 
-    public void ispisiEventLog() {
-        System.out.println("=== Event log ===");
-        System.out.print(eventLog);
-    }
+		System.out.println("Svi neprijatelji:");
+		ispisiNeprijatelje(igra.getNeprijatelje());
+		System.out.println();
 
-    public static void main(String[] args) {
+		System.out.println("Neprijatelji ciji tip sadrzi gob:");
+		ispisiNeprijatelje(igra.findByType("gob"));
+		System.out.println("Neprijatelji ciji tip sadrzi ORC (velika slova):");
+		ispisiNeprijatelje(igra.findByType("ORC"));
+		System.out.println();
 
-     
-        Player player = new Player("  player   one ", 10, 5, 32, 32, 85);
-        Game game = new Game(player);
+		System.out.println("Neprijatelji koji se sudaraju sa igracem:");
+		ispisiNeprijatelje(igra.collidingWithPlayer());
+		System.out.println();
 
-       
-        Enemy orc = new Enemy("Orc", 50, 50, 16, 16, 30);
-        game.addEnemy(orc);
+		System.out.println("Stanje igraca prije: " + igrac);
+		igra.resolveCollisions();
+		System.out.println("Stanje igraca poslije: " + igrac);
+		System.out.println();
 
-        String opis = "Goblin;12,5;16x16;20";
-        String[] dio = opis.split(";");             
-        String tip = dio[0];
-        String[] pozicija = dio[1].split(",");       
-        int ex = Integer.parseInt(pozicija[0]);
-        int ey = Integer.parseInt(pozicija[1]);
-        String[] dimenzije = dio[2].split("x");      
-        int ew = Integer.parseInt(dimenzije[0]);
-        int eh = Integer.parseInt(dimenzije[1]);
-        int dmg = Integer.parseInt(dio[3]);
-        Enemy goblin = new Enemy(tip, ex, ey, ew, eh, dmg);
-        game.addEnemy(goblin);
-
-     
-        game.ispisiNeprijatelje();
-
-        
-        Enemy[] pronadjeni = game.findByType("gob");
-        System.out.println("Neprijatelji ciji tip sadrzi \"gob\" (" + pronadjeni.length + "):");
-        for (int i = 0; i < pronadjeni.length; i++) {
-            System.out.println("  " + pronadjeni[i].toString());
-        }
-
-   
-        System.out.println("Prije: " + player.toString());
-
-     
-        Enemy[] sudaraju = game.collidingWithPlayer();
-        System.out.println("Broj neprijatelja u sudaru sa igracem: " + sudaraju.length);
-        game.resolveCollisions();
-
-        
-        System.out.println("Poslije: " + player.toString());
-
-        game.ispisiEventLog();
-	
-    }
-
+		System.out.println("DNEVNIK DOGADJAJA:");
+		ArrayList<String> dnevnik = igra.getDnevnik();
+		for (int i = 0; i < dnevnik.size(); i++) {
+			System.out.println("  " + (i + 1) + ". " + dnevnik.get(i));
+		}
+	}
 }
+
+
